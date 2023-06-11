@@ -1,7 +1,3 @@
-func.func @f(%arg: i32) -> i32 {
-  spirv.ReturnValue %arg : i32
-}
-
 spirv.module Logical GLSL450 requires #spirv.vce<v1.0, [Shader], []> {
   spirv.GlobalVariable @in {location = 0 : i32} : !spirv.ptr<vector<3xf32>, Input>
   spirv.GlobalVariable @out {location = 0 : i32} : !spirv.ptr<vector<4xf32>, Output>
