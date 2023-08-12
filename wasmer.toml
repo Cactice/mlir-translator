@@ -1,0 +1,21 @@
+[package]
+name = 'cactice/mlir-translate'
+version = '0.1.0'
+description = 'Description for package mlir-translate'
+
+# See more keys and definitions at https://docs.wasmer.io/registry/manifest
+
+[dependencies]
+
+[[module]]
+name = 'mlir-translate'
+source = 'mlir-translate.wasm'
+abi = 'wasi'
+
+[module.interfaces]
+wasi = '0.1.0-unstable'
+
+[[command]]
+name = 'mlir-translate'
+module = 'mlir-translate'
+runner = "https://webc.org/runner/wasi"
