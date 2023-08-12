@@ -2,6 +2,11 @@ spirv.module Logical GLSL450 requires #spirv.vce<v1.0, [Shader], []> {
   spirv.GlobalVariable @in {location = 0 : i32} : !spirv.ptr<vector<3xf32>, Input>
   spirv.GlobalVariable @out {location = 0 : i32} : !spirv.ptr<vector<4xf32>, Output>
 
+  spirv.func @combine(%l1: f32, %l2 : f32) ->  !spirv.struct<(f32, f32)>"None" {
+    %combined = spirv.CompositeConstruct %l1, %l2: (f32,f32) -> !spirv.struct<(f32, f32)>
+    spirv.ReturnValue %combined : !spirv.struct<(f32, f32)>
+  }
+
   spirv.func @addFloat(%ptr1: !spirv.ptr<f32, Function>, %ptr2 : !spirv.ptr<f32, Function>) -> f32 "None" {
     %l1 = spirv.Load "Function" %ptr1 : f32
     %l2 = spirv.Load "Function" %ptr2 : f32
@@ -36,7 +41,11 @@ spirv.module Logical GLSL450 requires #spirv.vce<v1.0, [Shader], []> {
     %in_ptr = spirv.mlir.addressof @in : !spirv.ptr<vector<3xf32>, Input>
     %out_ptr = spirv.mlir.addressof @out : !spirv.ptr<vector<4xf32>, Output>
 
+    %f_2 = spirv.Constant 3.0: f32
+    %f_3 = spirv.Constant 3.0: f32
+
     %0 = spirv.Variable : !spirv.ptr<!spirv.rtarray<f32>, Function>
+    %cout = spirv.FunctionCall @combine(%f_2,%f_3) : (f32,f32) ->  (!spirv.struct<(f32, f32)>)
 
     %in = spirv.Load "Input" %in_ptr : vector<3xf32>
     %out = spirv.FunctionCall @vec3ToVec4(%in) : (vector<3xf32>) ->  (vector<4xf32>)
