@@ -1,16 +1,26 @@
 use anyhow::Result;
-use std::io::{Read, Write};
-use wasmer::{
-    Extern, Function, FunctionEnv, FunctionEnvMut, Imports, Instance, Module, Store, Value,
+use std::{
+    cell::{self, OnceCell},
+    io::{Read, Write},
+    path::Path,
+    sync::Arc,
 };
-use wasmer_wasix::{Pipe, WasiEnv};
+use wasmer::{
+    Cranelift, Function, FunctionEnv, FunctionEnvMut, Imports, Instance, Module, Store, Value,
+};
+use wasmer_wasix::{
+    default_fs_backing,
+    virtual_fs::{self, DeviceFile, FileSystem, RootFileSystemBuilder},
+    Pipe, VirtualFile, WasiEnv,
+};
 
 fn main() -> Result<()> {
-    // Let's declare the Wasm module with the text representation.
     let simple_frag = std::fs::read_to_string("./simpleFrag.mlir")?;
 
     // Create a Store.
-    let mut store = Store::default();
+    // Use LLVM compiler with the default settings
+    let compiler = Cranelift::default();
+    let mut store = Store::new(compiler);
 
     // serialize when updating wasm
     // let wasm_bytes = std::fs::read("./mlir-translate.wasm")?;
@@ -27,16 +37,24 @@ fn main() -> Result<()> {
         .unwrap();
     let _guard = runtime.enter();
     println!("Tokio ready");
+
     let (mut stdin_sender, stdin_reader) = Pipe::channel();
     let (stdout_sender, mut stdout_reader) = Pipe::channel();
     let env = FunctionEnv::new(&mut store, ());
 
-    stdin_sender.write(simple_frag.as_bytes())?;
+    let current_dir = std::env::current_dir()?;
+    // let fs:Box<dyn FileSystem>= =FileSystem::;
+
+    let fs: Arc<dyn FileSystem + Send + Sync> = Arc::new(virtual_fs::mem_fs::FileSystem::default());
+    let s = RootFileSystemBuilder::default().build();
+    // s.mount_directory_entries(Path::new("."), &fs, Path::new("."))?;
     let mut wasi_env = WasiEnv::builder("mlir-translate")
         .stdin(Box::new(stdin_reader))
         .stdout(Box::new(stdout_sender))
+        .sandbox_fs(s)
         .arg("-serialize-spirv")
         .arg("-no-implicit-module")
+        // .arg("./simpleFrag.mlir")
         .finalize(&mut store)?;
 
     let import_object = import(&wasi_env, &mut store, &module, env)?;
@@ -44,7 +62,8 @@ fn main() -> Result<()> {
     wasi_env.initialize(&mut store, instance.clone())?;
 
     println!("initialized");
-    println!("written, calling");
+    stdin_sender.write(simple_frag.as_bytes())?;
+
     let start = instance.exports.get_function("_start")?;
     start.call(&mut store, &[])?;
     println!("called");
@@ -66,48 +85,6 @@ fn zero_return2(_env: FunctionEnvMut<()>, _a: i32, _b: i32) -> i32 {
 }
 fn zero_return1(_env: FunctionEnvMut<()>, _a: i32) -> i32 {
     0
-}
-fn import_various(import_object: &mut Imports, store: &mut Store, env: FunctionEnv<()>) {
-    import_object.define(
-        "env",
-        "__syscall_faccessat",
-        Function::new_typed_with_env(store, &env, zero_return4),
-    );
-    import_object.define(
-        "env",
-        "__syscall_chdir",
-        Function::new_typed_with_env(store, &env, zero_return1),
-    );
-    import_object.define(
-        "env",
-        "__syscall_getcwd",
-        Function::new_typed_with_env(store, &env, zero_return2),
-    );
-    import_object.define(
-        "env",
-        "__syscall_getdents64",
-        Function::new_typed_with_env(store, &env, zero_return3),
-    );
-    import_object.define(
-        "env",
-        "__syscall_readlinkat",
-        Function::new_typed_with_env(store, &env, zero_return4),
-    );
-    import_object.define(
-        "env",
-        "__syscall_unlinkat",
-        Function::new_typed_with_env(store, &env, zero_return3),
-    );
-    import_object.define(
-        "env",
-        "__syscall_rmdir",
-        Function::new_typed_with_env(store, &env, zero_return1),
-    );
-    import_object.define(
-        "env",
-        "__syscall_statfs64",
-        Function::new_typed_with_env(store, &env, zero_return3),
-    );
 }
 
 fn import(
