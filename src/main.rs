@@ -1,17 +1,12 @@
 use anyhow::Result;
 use std::{
-    cell::{self, OnceCell},
     io::{Read, Write},
-    path::Path,
     sync::Arc,
 };
-use wasmer::{
-    Cranelift, Function, FunctionEnv, FunctionEnvMut, Imports, Instance, Module, Store, Value,
-};
+use wasmer::{Cranelift, Function, FunctionEnv, FunctionEnvMut, Imports, Instance, Module, Store};
 use wasmer_wasix::{
-    default_fs_backing,
-    virtual_fs::{self, DeviceFile, FileSystem, RootFileSystemBuilder},
-    Pipe, VirtualFile, WasiEnv,
+    virtual_fs::{self, FileSystem, RootFileSystemBuilder},
+    Pipe, WasiEnv,
 };
 
 fn main() -> Result<()> {
@@ -42,10 +37,10 @@ fn main() -> Result<()> {
     let (stdout_sender, mut stdout_reader) = Pipe::channel();
     let env = FunctionEnv::new(&mut store, ());
 
-    let current_dir = std::env::current_dir()?;
-    // let fs:Box<dyn FileSystem>= =FileSystem::;
+    let _current_dir = std::env::current_dir()?;
 
-    let fs: Arc<dyn FileSystem + Send + Sync> = Arc::new(virtual_fs::mem_fs::FileSystem::default());
+    let _fs: Arc<dyn FileSystem + Send + Sync> =
+        Arc::new(virtual_fs::mem_fs::FileSystem::default());
     let s = RootFileSystemBuilder::default().build();
     // s.mount_directory_entries(Path::new("."), &fs, Path::new("."))?;
     let mut wasi_env = WasiEnv::builder("mlir-translate")
