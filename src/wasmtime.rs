@@ -1,13 +1,9 @@
-use std::{
-    fs,
-    io::{self, Write},
-};
+use std::io::{self, Write};
 
 use anyhow::{Ok, Result};
 use wasi_common::pipe::{ReadPipe, WritePipe};
-use wasmer_wasi::WasiStateBuilder;
 use wasmtime::*;
-use wasmtime_wasi::{file::File, sync::WasiCtxBuilder, Dir, WasiFile};
+use wasmtime_wasi::sync::WasiCtxBuilder;
 
 fn main() -> Result<()> {
     let simple_frag = std::fs::read_to_string("./simpleFrag.mlir")?;
@@ -16,16 +12,10 @@ fn main() -> Result<()> {
     let mut linker = Linker::new(&engine);
     wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
 
-    let file = fs::File::open(".")?;
-
     // Create a WASI context and put it in a Store; all instances in the store
     // share this context. `WasiCtxBuilder` provides a number of ways to
     // configure what the target program will have access to.
-    let mut wasi = WasiCtxBuilder::new()
-        // .preopened_dir(Dir::from_std_file(file), "/")?
-        .arg("-serialize-spirv")?
-        .arg("-no-implicit-module")?
-        .build();
+    let mut wasi = WasiCtxBuilder::new().build();
     let stdin = ReadPipe::from(simple_frag);
     let stdout = Box::new(WritePipe::new_in_memory());
 
@@ -53,10 +43,6 @@ fn main() -> Result<()> {
 
     let mut handle = io::stdout().lock();
     handle.write_all(&contents)?;
-
-    // println!("contents of stdout: {:?}", unsafe {
-    //     String::from_utf8_lossy(&contents)
-    // });
 
     Ok(())
 }
