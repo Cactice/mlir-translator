@@ -25,7 +25,6 @@ fn main() -> Result<()> {
         // .preopened_dir(Dir::from_std_file(file), "/")?
         .arg("-serialize-spirv")?
         .arg("-no-implicit-module")?
-        .inherit_stdout()
         .build();
     let stdin = ReadPipe::from(simple_frag);
     let stdout = Box::new(WritePipe::new_in_memory());
@@ -51,6 +50,10 @@ fn main() -> Result<()> {
         .try_into_inner()
         .expect("sole remaining reference to WritePipe")
         .into_inner();
+
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    handle.write_all(&contents)?;
 
     // println!("contents of stdout: {:?}", unsafe {
     //     String::from_utf8_lossy(&contents)
