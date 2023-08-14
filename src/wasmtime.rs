@@ -51,8 +51,7 @@ fn main() -> Result<()> {
         .expect("sole remaining reference to WritePipe")
         .into_inner();
 
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
+    let mut handle = io::stdout().lock();
     handle.write_all(&contents)?;
 
     // println!("contents of stdout: {:?}", unsafe {
