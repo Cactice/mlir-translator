@@ -1,4 +1,7 @@
-use std::io::{self, Write};
+use std::{
+    fs,
+    io::{self, Write},
+};
 
 use anyhow::{Ok, Result};
 use wasi_common::pipe::{ReadPipe, WritePipe};
@@ -15,7 +18,10 @@ fn main() -> Result<()> {
     // Create a WASI context and put it in a Store; all instances in the store
     // share this context. `WasiCtxBuilder` provides a number of ways to
     // configure what the target program will have access to.
-    let mut wasi = WasiCtxBuilder::new().build();
+    let mut wasi = WasiCtxBuilder::new()
+        .arg("-serialize-spirv")?
+        .arg("-no-implicit-module")?
+        .build();
     let stdin = ReadPipe::from(simple_frag);
     let stdout = Box::new(WritePipe::new_in_memory());
 
@@ -35,11 +41,13 @@ fn main() -> Result<()> {
         .get_default(&mut store, "")?
         .typed::<(), ()>(&store)?
         .call(&mut store, ());
+    println!("called");
     drop(store);
     let contents: Vec<u8> = stdout
         .try_into_inner()
         .expect("sole remaining reference to WritePipe")
         .into_inner();
+    println!("read done");
 
     let mut handle = io::stdout().lock();
     handle.write_all(&contents)?;
