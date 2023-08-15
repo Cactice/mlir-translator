@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::{
-    io::{Read, Write},
+    io::{self, stdout, Read, Write},
     path::Path,
     sync::Arc,
 };
@@ -60,14 +60,24 @@ fn main() -> Result<()> {
 
     println!("initialized");
     writeln!(stdin_sender, "{}", simple_frag)?;
+    drop(stdin_sender);
 
     println!("written");
     let start = instance.exports.get_function("_start")?;
-    start.call(&mut store, &[])?;
+    let _ = start.call(&mut store, &[]);
     println!("called");
-    let mut buf = String::new();
-    stdout_reader.read_to_string(&mut buf)?;
-    println!("Read \"{}\" from the WASI stdout!", buf.trim());
+    let mut buf = Vec::new();
+
+    println!("reading...");
+    drop(instance);
+    drop(wasi_env);
+    stdout_reader.read_to_end(&mut buf)?;
+    println!("read done!");
+
+    println!(
+        "Read \"{}\" from the WASI stdout!",
+        String::from_utf8_lossy(&buf)
+    );
 
     Ok(())
 }
