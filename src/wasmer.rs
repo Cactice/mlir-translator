@@ -74,10 +74,8 @@ fn main() -> Result<()> {
     stdout_reader.read_to_end(&mut buf)?;
     println!("read done!");
 
-    println!(
-        "Read \"{}\" from the WASI stdout!",
-        String::from_utf8_lossy(&buf)
-    );
+    let mut handle = io::stdout().lock();
+    handle.write_all(&buf)?;
 
     Ok(())
 }
