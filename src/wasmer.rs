@@ -69,6 +69,7 @@ fn main() -> Result<()> {
     let mut buf = Vec::new();
 
     println!("reading...");
+    wasi_env.cleanup(&mut store, None);
     drop(instance);
     drop(wasi_env);
     stdout_reader.read_to_end(&mut buf)?;
