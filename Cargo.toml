@@ -1,5 +1,7 @@
 [package]
-name = "mlir-translator"
+name = "mlir-translator-spirv"
+description = "convert mlir to spirv"
+license = "MIT"
 version = "0.1.0"
 edition = "2021"
 

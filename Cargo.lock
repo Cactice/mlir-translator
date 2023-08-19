@@ -1304,7 +1304,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mlir-translator"
+name = "mlir-translator-spirv"
 version = "0.1.0"
 dependencies = [
  "anyhow",
