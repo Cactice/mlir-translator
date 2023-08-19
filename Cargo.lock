@@ -1304,7 +1304,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mlir-playground"
+name = "mlir-translator"
 version = "0.1.0"
 dependencies = [
  "anyhow",
